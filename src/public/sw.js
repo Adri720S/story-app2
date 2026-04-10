@@ -1,93 +1,51 @@
 const CACHE_NAME = 'app-shell-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/app.bundle.js',
-];
+const urlsToCache = ['/', '/index.html', '/app.bundle.js'];
 
-// =======================
 // INSTALL
-// =======================
 self.addEventListener('install', (event) => {
-  self.skipWaiting(); // langsung aktif
-
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
   );
 });
 
-// =======================
 // ACTIVATE
-// =======================
 self.addEventListener('activate', (event) => {
-  self.clients.claim(); // langsung ambil kontrol
-
+  self.clients.claim();
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
+          if (key !== CACHE_NAME) return caches.delete(key);
         })
       )
     )
   );
 });
 
-// =======================
-// FETCH (OFFLINE SUPPORT)
-// =======================
+// FETCH
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    }).catch(() => {
-      // fallback kalau offline total
-      if (event.request.destination === 'document') {
-        return caches.match('/index.html');
-      }
-    })
+    caches.match(event.request).then((res) => res || fetch(event.request))
   );
 });
 
-// =======================
-// PUSH NOTIFICATION
-// =======================
+// PUSH
 self.addEventListener('push', (event) => {
-  console.log('Push diterima');
-
   let data = {
     title: 'Story Baru!',
     options: {
       body: 'Ada story baru ditambahkan',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
-      data: {
-        url: '/',
-      },
-      actions: [
-        {
-          action: 'open',
-          title: 'Lihat',
-        },
-        {
-          action: 'close',
-          title: 'Tutup',
-        },
-      ],
+      data: { url: '/' },
     },
   };
 
-  // 🔥 Ambil data dari server (dynamic)
   if (event.data) {
     const json = event.data.json();
-
-    data.title = json.title || 'Story Baru!';
-    data.options.body = json.options?.body || 'Ada update baru!';
-    data.options.data.url = '/'; // bisa diarahkan ke detail nanti
+    data.title = json.title;
+    data.options.body = json.options?.body;
   }
 
   event.waitUntil(
@@ -95,29 +53,18 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// =======================
-// CLICK NOTIFICATION
-// =======================
+// CLICK
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-
-  if (event.action === 'close') {
-    return;
-  }
 
   const url = event.notification.data?.url || '/';
 
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes(url) && 'focus' in client) {
-          return client.focus();
-        }
+    clients.matchAll({ type: 'window' }).then((clientsArr) => {
+      for (const client of clientsArr) {
+        if (client.url.includes(url)) return client.focus();
       }
-
-      if (clients.openWindow) {
-        return clients.openWindow(url);
-      }
+      return clients.openWindow(url);
     })
   );
 });

@@ -1,2 +1,2 @@
-APP_URL=<https://ephemeral-entremet-3026af.netlify.app/>
-MAP_SERVICE_API_KEY=<api_key>
+APP_URL=<https://story-appv2.netlify.app/>
+MAP_SERVICE_API_KEY=<tidak_ada>

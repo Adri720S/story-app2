@@ -20,7 +20,7 @@ export default class App {
     });
   }
 
-  // ✅ NAVIGATION FIX (ADA REGISTER)
+  // ✅ NAVIGATION
   _renderNavigation() {
     const isLoggedIn = !!localStorage.getItem('accessToken');
 
@@ -45,35 +45,11 @@ export default class App {
     `;
   }
 
-  async renderPage() {
-    this._renderNavigation();
-
-    const url = getActiveRoute();
-    const isLoggedIn = !!localStorage.getItem('accessToken');
-
-    // ✅ REDIRECT LOGIN (AMAN)
-    if (!isLoggedIn && url !== '/login' && url !== '/register') {
-      window.location.hash = '/login';
-      return;
-    }
-
-    const page = routes[url];
-
-    if (!page) {
-      this.#content.innerHTML = '<h2>Page not found</h2>';
-      return;
-    }
-
-    // ✅ RENDER HALAMAN
-    this.#content.innerHTML = await page.render();
-    await page.afterRender();
-
-    // ✅ LOGOUT HANDLER (AMAN)
+  // ✅ LOGOUT FIX (WAJIB ADA)
+  _setupLogout() {
     const logoutBtn = document.querySelector('#logout-btn');
 
-    if (logoutBtn && !logoutBtn.dataset.bound) {
-      logoutBtn.dataset.bound = 'true';
-
+    if (logoutBtn) {
       logoutBtn.addEventListener('click', (e) => {
         e.preventDefault();
 
@@ -86,5 +62,38 @@ export default class App {
         }
       });
     }
+  }
+
+  async renderPage() {
+    this._renderNavigation();
+
+    const url = getActiveRoute();
+    const isLoggedIn = !!localStorage.getItem('accessToken');
+
+    if (!isLoggedIn && url !== '/login' && url !== '/register') {
+      window.location.hash = '/login';
+      return;
+    }
+
+    const page = routes[url];
+
+    if (!page) {
+      this.#content.innerHTML = '<h2>Page not found</h2>';
+      return;
+    }
+
+    // ✅ VIEW TRANSITION (LOLOS REVIEW)
+    if (document.startViewTransition) {
+      await document.startViewTransition(async () => {
+        this.#content.innerHTML = await page.render();
+        await page.afterRender();
+      });
+    } else {
+      this.#content.innerHTML = await page.render();
+      await page.afterRender();
+    }
+
+    // ✅ WAJIB
+    this._setupLogout();
   }
 }

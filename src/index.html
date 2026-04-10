@@ -1,34 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="shortcut icon" href="favicon.png">
-
     <title>App</title>
 
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#2196f3">
-
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2196f3" />
+    <link rel="shortcut icon" href="favicon.png" />
   </head>
+
   <body>
     <header>
       <div class="main-header container">
         <a class="brand-name" href="#/">App</a>
 
-        <nav id="navigation-drawer" class="navigation-drawer">
-          <ul id="nav-list" class="nav-list">
-            <li>
-              <button id="notif-btn">Notif</button>
-            </li>
-          </ul>
-        </nav>
+        <nav id="navigation-drawer" class="navigation-drawer"></nav>
 
         <button id="drawer-button" class="drawer-button">☰</button>
-        
       </div>
     </header>
 
+    <!-- ✅ TEMPAT NOTIF (JANGAN DI NAV) -->
+    <section class="notif-wrapper">
+      <button id="subscribe-btn">🔔 Subscribe</button>
+      <button id="unsubscribe-btn">❌ Unsubscribe</button>
+    </section>
+
     <main id="main-content" class="main-content"></main>
+
+    <!-- ✅ WAJIB -->
+    <script src="app.bundle.js"></script>
   </body>
 </html>

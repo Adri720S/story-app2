@@ -16,7 +16,9 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key);
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
         })
       )
     )
@@ -30,7 +32,7 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// PUSH
+// PUSH (🔥 FIX ERROR JSON)
 self.addEventListener('push', (event) => {
   let data = {
     title: 'Story Baru!',
@@ -43,9 +45,14 @@ self.addEventListener('push', (event) => {
   };
 
   if (event.data) {
-    const json = event.data.json();
-    data.title = json.title;
-    data.options.body = json.options?.body;
+    try {
+      const json = event.data.json();
+      data.title = json.title || data.title;
+      data.options.body = json.options?.body || data.options.body;
+    } catch (err) {
+      // 🔥 kalau dari DevTools (bukan JSON)
+      data.options.body = event.data.text();
+    }
   }
 
   event.waitUntil(
@@ -62,7 +69,9 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((clientsArr) => {
       for (const client of clientsArr) {
-        if (client.url.includes(url)) return client.focus();
+        if (client.url.includes(url)) {
+          return client.focus();
+        }
       }
       return clients.openWindow(url);
     })

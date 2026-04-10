@@ -5,7 +5,7 @@ export default class App {
   #content = null;
   #drawerButton = null;
   #navigationDrawer = null;
-  #isTransitioning = false; // 🔥 LOCK biar tidak double render
+  #isTransitioning = false;
 
   constructor({ content, drawerButton, navigationDrawer }) {
     this.#content = content;
@@ -56,7 +56,7 @@ export default class App {
 
         if (yakin) {
           localStorage.removeItem('accessToken');
-          localStorage.removeItem('pushSubscribed'); // 🔥 sekalian reset push
+          localStorage.removeItem('pushSubscribed');
           window.location.hash = '/login';
           window.location.reload();
         }
@@ -64,8 +64,20 @@ export default class App {
     }
   }
 
+  // 🔥 GLOBAL CLEANUP (INI KUNCI UTAMA)
+  _cleanup() {
+    const mapContainer = document.getElementById('map');
+
+    if (mapContainer && mapContainer._leaflet_id) {
+      try {
+        mapContainer._leaflet_id = null;
+      } catch (e) {
+        console.warn('cleanup error', e);
+      }
+    }
+  }
+
   async renderPage() {
-    // 🔥 cegah double render
     if (this.#isTransitioning) return;
     this.#isTransitioning = true;
 
@@ -74,7 +86,6 @@ export default class App {
     let url = getActiveRoute();
     const isLoggedIn = !!localStorage.getItem('accessToken');
 
-    // 🔥 FIX: jangan redirect pakai hash di sini
     if (!isLoggedIn && url !== '/login' && url !== '/register') {
       url = '/login';
     }
@@ -86,6 +97,9 @@ export default class App {
       this.#isTransitioning = false;
       return;
     }
+
+    // 🔥 WAJIB: bersihin map sebelum render baru
+    this._cleanup();
 
     try {
       if (document.startViewTransition) {
@@ -100,7 +114,6 @@ export default class App {
     } catch (err) {
       console.warn('Transition skipped:', err);
 
-      // 🔥 fallback
       this.#content.innerHTML = await page.render();
       await page.afterRender();
     }

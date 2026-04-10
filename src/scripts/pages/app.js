@@ -67,12 +67,12 @@ export default class App {
   async renderPage() {
     this._renderNavigation();
 
-    const url = getActiveRoute();
+    let url = getActiveRoute();
     const isLoggedIn = !!localStorage.getItem('accessToken');
 
+    // ✅ FIX: jangan redirect pakai hash
     if (!isLoggedIn && url !== '/login' && url !== '/register') {
-      window.location.hash = '/login';
-      return;
+      url = '/login';
     }
 
     const page = routes[url];
@@ -82,18 +82,24 @@ export default class App {
       return;
     }
 
-    // ✅ VIEW TRANSITION (LOLOS REVIEW)
-    if (document.startViewTransition) {
-      await document.startViewTransition(async () => {
+    try {
+      if (document.startViewTransition) {
+        await document.startViewTransition(async () => {
+          this.#content.innerHTML = await page.render();
+          await page.afterRender();
+        });
+      } else {
         this.#content.innerHTML = await page.render();
         await page.afterRender();
-      });
-    } else {
+      }
+    } catch (err) {
+      console.warn('Transition skipped:', err);
+
+      // fallback biar tidak error
       this.#content.innerHTML = await page.render();
       await page.afterRender();
     }
 
-    // ✅ WAJIB
     this._setupLogout();
   }
 }

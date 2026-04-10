@@ -31,11 +31,6 @@ export default class HomePage {
   async afterRender() {
     const token = localStorage.getItem('accessToken');
 
-    if (!token) {
-      window.location.hash = '/login';
-      return;
-    }
-
     let stories = [];
 
     try {
@@ -46,11 +41,16 @@ export default class HomePage {
       return;
     }
 
-    const map = L.map('map').setView([-6.2, 106.8], 5);
+    // 🔥 FIX MAP (WAJIB)
+    if (this._map) {
+      this._map.remove();
+    }
+
+    this._map = L.map('map').setView([-6.2, 106.8], 5);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
+    }).addTo(this._map);
 
     const listContainer = document.querySelector('#story-list');
     listContainer.innerHTML = '';
@@ -63,7 +63,7 @@ export default class HomePage {
     stories.forEach((story) => {
       if (story.lat && story.lon) {
         L.marker([story.lat, story.lon])
-          .addTo(map)
+          .addTo(this._map)
           .bindPopup(`<b>${story.name}</b><br>${story.description}`);
       }
 
@@ -88,7 +88,6 @@ export default class HomePage {
         alert('Disimpan ke IndexedDB');
       });
     });
-    
   }
 }
 

@@ -32,8 +32,9 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// PUSH (🔥 FIX ERROR JSON)
 self.addEventListener('push', (event) => {
+  console.log('🔥 PUSH MASUK');
+
   let data = {
     title: 'Story Baru!',
     options: {
@@ -50,30 +51,11 @@ self.addEventListener('push', (event) => {
       data.title = json.title || data.title;
       data.options.body = json.options?.body || data.options.body;
     } catch (err) {
-      // 🔥 kalau dari DevTools (bukan JSON)
       data.options.body = event.data.text();
     }
   }
 
   event.waitUntil(
     self.registration.showNotification(data.title, data.options)
-  );
-});
-
-// CLICK
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  const url = event.notification.data?.url || '/';
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientsArr) => {
-      for (const client of clientsArr) {
-        if (client.url.includes(url)) {
-          return client.focus();
-        }
-      }
-      return clients.openWindow(url);
-    })
   );
 });

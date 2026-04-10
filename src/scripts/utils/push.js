@@ -6,7 +6,15 @@ export async function subscribePush() {
 
     let subscription = await registration.pushManager.getSubscription();
 
-    // 🔥 kalau belum subscribe
+    // 🔥 CEK SUDAH PERNAH SUBSCRIBE KE SERVER
+    const alreadySent = localStorage.getItem('pushSubscribed');
+
+    if (subscription && alreadySent) {
+      alert('Sudah subscribe sebelumnya');
+      return;
+    }
+
+    // 🔥 SUBSCRIBE KE BROWSER
     if (!subscription) {
       const permission = await Notification.requestPermission();
 
@@ -21,6 +29,7 @@ export async function subscribePush() {
       });
     }
 
+    // 🔥 KIRIM KE SERVER (SEKALI SAJA)
     const response = await fetch('https://story-api.dicoding.dev/v1/notifications/subscribe', {
       method: 'POST',
       headers: {
@@ -39,6 +48,9 @@ export async function subscribePush() {
     if (!response.ok) {
       throw new Error('Gagal subscribe ke server');
     }
+
+    // 🔥 SIMPAN STATUS
+    localStorage.setItem('pushSubscribed', 'true');
 
     console.log('SUBSCRIBE SUCCESS');
     alert('Berhasil subscribe!');
@@ -74,6 +86,9 @@ export async function unsubscribePush() {
     }
 
     await subscription.unsubscribe();
+
+    // 🔥 HAPUS FLAG
+    localStorage.removeItem('pushSubscribed');
 
     console.log('UNSUBSCRIBE SUCCESS');
     alert('Berhasil unsubscribe!');

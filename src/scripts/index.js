@@ -16,10 +16,19 @@ window.addEventListener('hashchange', () => {
   app.renderPage();
 });
 
-window.addEventListener('load', () => {
-  app.renderPage();
-  registerServiceWorker();
-  initPushButton();
+window.addEventListener('load', async () => {
+  await app.renderPage();
+
+  // 🔥 supaya tidak double
+  if (!window._swRegistered) {
+    await registerServiceWorker();
+    window._swRegistered = true;
+  }
+
+  if (!window._pushInit) {
+    initPushButton();
+    window._pushInit = true;
+  }
 });
 
 // REGISTER SW

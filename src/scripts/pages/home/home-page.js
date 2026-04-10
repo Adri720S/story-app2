@@ -6,8 +6,8 @@ import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 
-import { saveStory } from '../../data/db';
 import { getStories } from '../../data/api';
+import { saveStory } from '../../data/db';
 
 delete L.Icon.Default.prototype._getIconUrl;
 
@@ -19,7 +19,7 @@ L.Icon.Default.mergeOptions({
 
 export default class HomePage {
   constructor() {
-    this._map = null; // 🔥 simpan instance map
+    this._map = null;
   }
 
   async render() {
@@ -35,6 +35,11 @@ export default class HomePage {
   async afterRender() {
     const token = localStorage.getItem('accessToken');
 
+    if (!token) {
+      window.location.hash = '/login';
+      return;
+    }
+
     let stories = [];
 
     try {
@@ -45,13 +50,17 @@ export default class HomePage {
       return;
     }
 
-    // 🔥 FIX UTAMA LEAFLET (anti double init)
-    const container = L.DomUtil.get('map');
-    if (container != null && container._leaflet_id != null) {
+    // 🔥 FIX MAP (ANTI ERROR TOTAL)
+    if (this._map) {
+      this._map.remove();
+      this._map = null;
+    }
+
+    const container = document.getElementById('map');
+    if (container && container._leaflet_id) {
       container._leaflet_id = null;
     }
 
-    // 🔥 INIT MAP
     this._map = L.map('map').setView([-6.2, 106.8], 5);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -76,7 +85,7 @@ export default class HomePage {
       const item = document.createElement('div');
       item.innerHTML = `
         <h2>${story.name}</h2>
-        <img src="${story.photoUrl}" alt="${story.name}" width="200">
+        <img src="${story.photoUrl}" width="200">
         <p>${story.description}</p>
         <p>${new Date(story.createdAt).toLocaleDateString()}</p>
         <button class="save-btn" data-id="${story.id}">Simpan</button>
@@ -85,7 +94,6 @@ export default class HomePage {
       listContainer.appendChild(item);
     });
 
-    // 🔥 SAVE BUTTON
     document.querySelectorAll('.save-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;

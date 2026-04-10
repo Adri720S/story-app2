@@ -1,11 +1,13 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-// FIX ICON ERROR
+
+// FIX ICON
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 
 import { saveStory } from '../../data/db';
+import { getStories } from '../../data/api';
 
 delete L.Icon.Default.prototype._getIconUrl;
 
@@ -15,14 +17,16 @@ L.Icon.Default.mergeOptions({
   shadowUrl,
 });
 
-import { getStories } from '../../data/api';
-
 export default class HomePage {
+  constructor() {
+    this._map = null; // 🔥 simpan instance map
+  }
+
   async render() {
     return `
       <section class="container">
         <h1>Home Page</h1>
-        <div id="map"></div>
+        <div id="map" style="height: 400px;"></div>
         <div id="story-list"></div>
       </section>
     `;
@@ -41,15 +45,17 @@ export default class HomePage {
       return;
     }
 
-    // 🔥 FIX MAP (WAJIB)
-    if (this._map) {
-      this._map.remove();
+    // 🔥 FIX UTAMA LEAFLET (anti double init)
+    const container = L.DomUtil.get('map');
+    if (container != null && container._leaflet_id != null) {
+      container._leaflet_id = null;
     }
 
+    // 🔥 INIT MAP
     this._map = L.map('map').setView([-6.2, 106.8], 5);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap'
+      attribution: '&copy; OpenStreetMap',
     }).addTo(this._map);
 
     const listContainer = document.querySelector('#story-list');
@@ -79,6 +85,7 @@ export default class HomePage {
       listContainer.appendChild(item);
     });
 
+    // 🔥 SAVE BUTTON
     document.querySelectorAll('.save-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
@@ -90,4 +97,3 @@ export default class HomePage {
     });
   }
 }
-

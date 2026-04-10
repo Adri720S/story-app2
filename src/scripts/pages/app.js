@@ -5,6 +5,7 @@ export default class App {
   #content = null;
   #drawerButton = null;
   #navigationDrawer = null;
+  #isTransitioning = false; // 🔥 LOCK biar tidak double render
 
   constructor({ content, drawerButton, navigationDrawer }) {
     this.#content = content;
@@ -20,7 +21,6 @@ export default class App {
     });
   }
 
-  // ✅ NAVIGATION
   _renderNavigation() {
     const isLoggedIn = !!localStorage.getItem('accessToken');
 
@@ -45,7 +45,6 @@ export default class App {
     `;
   }
 
-  // ✅ LOGOUT FIX (WAJIB ADA)
   _setupLogout() {
     const logoutBtn = document.querySelector('#logout-btn');
 
@@ -57,6 +56,7 @@ export default class App {
 
         if (yakin) {
           localStorage.removeItem('accessToken');
+          localStorage.removeItem('pushSubscribed'); // 🔥 sekalian reset push
           window.location.hash = '/login';
           window.location.reload();
         }
@@ -65,12 +65,16 @@ export default class App {
   }
 
   async renderPage() {
+    // 🔥 cegah double render
+    if (this.#isTransitioning) return;
+    this.#isTransitioning = true;
+
     this._renderNavigation();
 
     let url = getActiveRoute();
     const isLoggedIn = !!localStorage.getItem('accessToken');
 
-    // ✅ FIX: jangan redirect pakai hash
+    // 🔥 FIX: jangan redirect pakai hash di sini
     if (!isLoggedIn && url !== '/login' && url !== '/register') {
       url = '/login';
     }
@@ -79,6 +83,7 @@ export default class App {
 
     if (!page) {
       this.#content.innerHTML = '<h2>Page not found</h2>';
+      this.#isTransitioning = false;
       return;
     }
 
@@ -95,11 +100,13 @@ export default class App {
     } catch (err) {
       console.warn('Transition skipped:', err);
 
-      // fallback biar tidak error
+      // 🔥 fallback
       this.#content.innerHTML = await page.render();
       await page.afterRender();
     }
 
     this._setupLogout();
+
+    this.#isTransitioning = false;
   }
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'app-shell-v1';
+const CACHE_NAME = 'app-shell-v2';
 const urlsToCache = ['/', '/index.html', '/app.bundle.js'];
 
 // INSTALL
@@ -27,8 +27,22 @@ self.addEventListener('activate', (event) => {
 
 // FETCH
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // 🔥 JANGAN INTERCEPT API
+  if (url.origin !== location.origin) {
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((res) => res || fetch(event.request))
+    caches.match(event.request).then((res) => {
+      return (
+        res ||
+        fetch(event.request).catch(() => {
+          return new Response('Offline', { status: 503 });
+        })
+      );
+    })
   );
 });
 
@@ -57,5 +71,13 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(
     self.registration.showNotification(data.title, data.options)
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  event.waitUntil(
+    clients.openWindow(event.notification.data?.url || '/')
   );
 });

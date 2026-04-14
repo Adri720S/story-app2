@@ -50,16 +50,27 @@ export default class HomePage {
       return;
     }
 
-    // 🔥 FIX MAP (ANTI ERROR TOTAL)
+    // 🔥 HARD RESET MAP (ANTI ERROR LEAFLET)
     if (this._map) {
+      this._map.off();
       this._map.remove();
       this._map = null;
     }
 
     const container = document.getElementById('map');
-    if (container && container._leaflet_id) {
-      container._leaflet_id = null;
+
+    if (container) {
+      // hapus isi biar bersih total
+      container.innerHTML = '';
+
+      // reset leaflet id (penting)
+      if (container._leaflet_id) {
+        delete container._leaflet_id;
+      }
     }
+
+    // 🔥 delay kecil (penting untuk view transition)
+    await new Promise((r) => setTimeout(r, 50));
 
     this._map = L.map('map').setView([-6.2, 106.8], 5);
 

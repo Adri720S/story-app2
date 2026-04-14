@@ -1,11 +1,12 @@
 import routes from '../routes/routes';
 import { getActiveRoute } from '../routes/url-parser';
+import { transitionHelper } from '../utils';
 
 export default class App {
   #content = null;
   #drawerButton = null;
   #navigationDrawer = null;
-  #isTransitioning = false;
+  _isTransitioning = false;
 
   constructor({ content, drawerButton, navigationDrawer }) {
     this.#content = content;
@@ -45,81 +46,66 @@ export default class App {
     `;
   }
 
-  _setupLogout() {
-    const logoutBtn = document.querySelector('#logout-btn');
-
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-
-        const yakin = confirm('Yakin ingin logout?');
-
-        if (yakin) {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('pushSubscribed');
-          window.location.hash = '/login';
-          window.location.reload();
-        }
-      });
-    }
-  }
-
-  // 🔥 GLOBAL CLEANUP (INI KUNCI UTAMA)
-  _cleanup() {
-    const mapContainer = document.getElementById('map');
-
-    if (mapContainer && mapContainer._leaflet_id) {
-      try {
-        mapContainer._leaflet_id = null;
-      } catch (e) {
-        console.warn('cleanup error', e);
-      }
-    }
-  }
-
   async renderPage() {
-    if (this.#isTransitioning) return;
-    this.#isTransitioning = true;
+    if (this._isTransitioning) return;
+    this._isTransitioning = true;
 
     this._renderNavigation();
 
-    let url = getActiveRoute();
+    const url = getActiveRoute();
     const isLoggedIn = !!localStorage.getItem('accessToken');
 
+    // 🔥 REDIRECT DULU
     if (!isLoggedIn && url !== '/login' && url !== '/register') {
-      url = '/login';
+      this._isTransitioning = false;
+      window.location.hash = '/login';
+      return;
     }
 
     const page = routes[url];
 
     if (!page) {
       this.#content.innerHTML = '<h2>Page not found</h2>';
-      this.#isTransitioning = false;
+      this._isTransitioning = false;
       return;
     }
 
-    // 🔥 WAJIB: bersihin map sebelum render baru
-    this._cleanup();
+    // 🔥 WAJIB PAKAI HELPER
+    const transition = transitionHelper({
+      // 🔥 SKIP TRANSITION KHUSUS HALAMAN HOME (MAP)
+      skipTransition: url === '/', 
 
-    try {
-      if (document.startViewTransition) {
-        await document.startViewTransition(async () => {
-          this.#content.innerHTML = await page.render();
-          await page.afterRender();
-        });
-      } else {
+      updateDOM: async () => {
         this.#content.innerHTML = await page.render();
         await page.afterRender();
-      }
-    } catch (err) {
-      console.warn('Transition skipped:', err);
+      },
+    });
 
-      this.#content.innerHTML = await page.render();
-      await page.afterRender();
+    transition.ready.catch(() => {});
+
+    transition.updateCallbackDone.then(() => {
+      scrollTo({ top: 0, behavior: 'instant' });
+      this._setupLogout();
+    });
+
+    this._isTransitioning = false;
+  }
+
+  _setupLogout() {
+    const logoutBtn = document.querySelector('#logout-btn');
+
+    if (logoutBtn && !logoutBtn.dataset.bound) {
+      logoutBtn.dataset.bound = 'true';
+
+      logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        if (confirm('Yakin ingin logout?')) {
+          localStorage.removeItem('accessToken');
+          window.location.hash = '/login';
+          window.location.reload();
+        }
+      });
     }
-
-    this._setupLogout();
-
-    this.#isTransitioning = false;
   }
 }

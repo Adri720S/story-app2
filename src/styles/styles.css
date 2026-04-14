@@ -143,8 +143,36 @@ header {
   }
 }
 
-::view-transition-old(root),
+/* 🔥 VIEW TRANSITION ANIMATION */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-out {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+::view-transition-old(root) {
+  animation: slide-out 300ms ease-out;
+}
+
 ::view-transition-new(root) {
-  animation-duration: 300ms;
-  animation-timing-function: ease;
+  animation: slide-in 300ms ease-out;
+}
+
+/* 🔥 HEADER DIPISAH */
+header {
+  view-transition-name: header;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }

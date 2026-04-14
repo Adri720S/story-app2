@@ -16,10 +16,17 @@ export default class App {
     this._setupDrawer();
   }
 
+  // 🔥 FIX DRAWER BUTTON
   _setupDrawer() {
-    this.#drawerButton.addEventListener('click', () => {
+    if (!this.#drawerButton) return;
+
+    this.#drawerButton.removeEventListener('click', this._drawerHandler);
+
+    this._drawerHandler = () => {
       this.#navigationDrawer.classList.toggle('open');
-    });
+    };
+
+    this.#drawerButton.addEventListener('click', this._drawerHandler);
   }
 
   _renderNavigation() {
@@ -51,11 +58,12 @@ export default class App {
     this._isTransitioning = true;
 
     this._renderNavigation();
+    this._setupDrawer(); // 🔥 biar tetap aktif setelah render ulang
 
     const url = getActiveRoute();
     const isLoggedIn = !!localStorage.getItem('accessToken');
 
-    // 🔥 REDIRECT DULU
+    // 🔥 redirect
     if (!isLoggedIn && url !== '/login' && url !== '/register') {
       this._isTransitioning = false;
       window.location.hash = '/login';
@@ -70,10 +78,9 @@ export default class App {
       return;
     }
 
-    // 🔥 WAJIB PAKAI HELPER
+    // 🔥 VIEW TRANSITION + SKIP MAP PAGE
     const transition = transitionHelper({
-      // 🔥 SKIP TRANSITION KHUSUS HALAMAN HOME (MAP)
-      skipTransition: url === '/', 
+      skipTransition: url === '/', // halaman map
 
       updateDOM: async () => {
         this.#content.innerHTML = await page.render();

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'app-shell-v2';
+const CACHE_NAME = 'app-shell-v3';
 const urlsToCache = ['/', '/index.html', '/app.bundle.js'];
 
 // INSTALL

@@ -26,6 +26,10 @@ export default class HomePage {
     return `
       <section class="container">
         <h1>Home Page</h1>
+
+        <!-- 🔥 SEARCH -->
+        <input type="text" id="search" placeholder="Cari story..." />
+
         <div id="map" style="height: 400px;"></div>
         <div id="story-list"></div>
       </section>
@@ -50,7 +54,7 @@ export default class HomePage {
       return;
     }
 
-    // 🔥 HARD RESET MAP (ANTI ERROR LEAFLET)
+    // 🔥 RESET MAP (ANTI ERROR)
     if (this._map) {
       this._map.off();
       this._map.remove();
@@ -60,16 +64,13 @@ export default class HomePage {
     const container = document.getElementById('map');
 
     if (container) {
-      // hapus isi biar bersih total
       container.innerHTML = '';
-
-      // reset leaflet id (penting)
       if (container._leaflet_id) {
         delete container._leaflet_id;
       }
     }
 
-    // 🔥 delay kecil (penting untuk view transition)
+    // 🔥 DELAY (biar aman dari transition)
     await new Promise((r) => setTimeout(r, 50));
 
     this._map = L.map('map').setView([-6.2, 106.8], 5);
@@ -79,40 +80,63 @@ export default class HomePage {
     }).addTo(this._map);
 
     const listContainer = document.querySelector('#story-list');
-    listContainer.innerHTML = '';
 
-    if (!stories || stories.length === 0) {
-      listContainer.innerHTML = '<p>Tidak ada data</p>';
-      return;
-    }
+    // 🔥 RENDER FUNCTION
+    const renderList = (data) => {
+      listContainer.innerHTML = '';
 
-    stories.forEach((story) => {
-      if (story.lat && story.lon) {
-        L.marker([story.lat, story.lon])
-          .addTo(this._map)
-          .bindPopup(`<b>${story.name}</b><br>${story.description}`);
+      if (!data || data.length === 0) {
+        listContainer.innerHTML = '<p>Tidak ada data</p>';
+        return;
       }
 
-      const item = document.createElement('div');
-      item.innerHTML = `
-        <h2>${story.name}</h2>
-        <img src="${story.photoUrl}" width="200">
-        <p>${story.description}</p>
-        <p>${new Date(story.createdAt).toLocaleDateString()}</p>
-        <button class="save-btn" data-id="${story.id}">Simpan</button>
-      `;
+      data.forEach((story) => {
+        // marker
+        if (story.lat && story.lon) {
+          L.marker([story.lat, story.lon])
+            .addTo(this._map)
+            .bindPopup(`<b>${story.name}</b><br>${story.description}`);
+        }
 
-      listContainer.appendChild(item);
-    });
+        const item = document.createElement('div');
 
-    document.querySelectorAll('.save-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.id;
-        const story = stories.find((s) => s.id === id);
+        item.innerHTML = `
+          <h2>${story.name}</h2>
+          <img src="${story.photoUrl}" width="200" alt="Foto dari ${story.name}">
+          <p>${story.description}</p>
+          <p>${new Date(story.createdAt).toLocaleDateString()}</p>
+          <button class="save-btn" data-id="${story.id}">Simpan</button>
+        `;
 
-        await saveStory(story);
-        alert('Disimpan ke IndexedDB');
+        listContainer.appendChild(item);
       });
+
+      // 🔥 SAVE BUTTON
+      document.querySelectorAll('.save-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const story = stories.find((s) => s.id === id);
+
+          await saveStory(story);
+          alert('Disimpan ke IndexedDB');
+        });
+      });
+    };
+
+    // render awal
+    renderList(stories);
+
+    // 🔥 SEARCH FEATURE
+    const searchInput = document.getElementById('search');
+
+    searchInput.addEventListener('input', () => {
+      const keyword = searchInput.value.toLowerCase();
+
+      const filtered = stories.filter((story) =>
+        story.name.toLowerCase().includes(keyword)
+      );
+
+      renderList(filtered);
     });
   }
 }
